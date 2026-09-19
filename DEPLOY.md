@@ -86,7 +86,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api alem
 ```
 
 The prod overlay (`docker-compose.prod.yml`):
-- Runs api/worker/beat from the GHCR image (`ghcr.io/krishnesh-kumar/luminalib:<git-sha>`), not a local build, and drops the dev bind-mount and `--reload`.
+- Runs api/worker/beat from the GHCR image (`${IMAGE_NAME}:${IMAGE_TAG}`, e.g. `ghcr.io/krishnesh-kumar/luminalib:<git-sha>` — `IMAGE_NAME`/`IMAGE_TAG` are exported by the deploy step, computed with the repo name lowercased since GHCR requires lowercase image refs), not a local build, and drops the dev bind-mount and `--reload`.
 - Stops publishing db/redis/minio/ollama ports to the public interface — they're only reachable over the internal compose network, exactly as before but now not exposed to the internet.
 - Adds Caddy in front of the API for TLS.
 
@@ -96,6 +96,7 @@ Every image is tagged with its git short-SHA (visible as the `build-and-push` jo
 ```bash
 ssh deploy@<host>
 cd /home/deploy/luminalib
+export IMAGE_NAME=ghcr.io/krishnesh-kumar/luminalib
 IMAGE_TAG=<previous-sha> docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 

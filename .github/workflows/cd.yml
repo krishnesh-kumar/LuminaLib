@@ -13,9 +13,6 @@ permissions:
   contents: read
   packages: write
 
-env:
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
-
 jobs:
   build-and-push:
     name: Build & push image to GHCR
@@ -25,13 +22,19 @@ jobs:
       github.event.workflow_run.conclusion == 'success'
     outputs:
       image_tag: ${{ steps.meta.outputs.sha_tag }}
+      image_name: ${{ steps.meta.outputs.image_name }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - id: meta
-        run: echo "sha_tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+        # GHCR image refs must be lowercase; github.repository preserves the
+        # repo's actual casing (krishnesh-kumar/LuminaLib), so lowercase it here
+        # rather than baking a case-sensitive name into the tag.
+        run: |
+          echo "sha_tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "image_name=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v3
 
@@ -48,8 +51,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.sha_tag }}
-            ${{ env.IMAGE_NAME }}:latest
+            ${{ steps.meta.outputs.image_name }}:${{ steps.meta.outputs.sha_tag }}
+            ${{ steps.meta.outputs.image_name }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -85,6 +88,7 @@ jobs:
           script: |
             set -e
             cd "${{ secrets.DEPLOY_APP_DIR }}"
+            export IMAGE_NAME=${{ needs.build-and-push.outputs.image_name }}
             export IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}
             export DEPLOY_DOMAIN="${{ secrets.DEPLOY_DOMAIN }}"
             echo "${{ secrets.GHCR_PULL_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
