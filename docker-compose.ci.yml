@@ -1,0 +1,24 @@
+
+services:
+  # Real Ollama needs a multi-GB model pull + real inference time, which is
+  # too slow for CI. Swap it for a stub implementing just POST /api/generate.
+  # The stub keeps the service name "ollama" so OLLAMA_BASE_URL=http://ollama:11434
+  # in .env needs no change.
+  ollama:
+    build: ./docker/ollama-stub
+    image: luminalib-ollama-stub:ci
+    volumes: []
+    ports:
+      - "11434:11434"
+
+  # No real model to pull against the stub; make this a fast no-op.
+  ollama-pull:
+    entrypoint: ["true"]
+    command: []
+
+  api:
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  worker:
+    # single-node CI runner: keep concurrency low to avoid resource pressure
+    command: celery -A app.core.celery_app worker --loglevel=info -Q llm,recs,celery --concurrency=2

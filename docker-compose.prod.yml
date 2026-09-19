@@ -1,0 +1,80 @@
+
+# Production overlay for the VPS. Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Differences from local dev:
+#  - api/worker/beat run from the pre-built GHCR image (no bind-mount, no --reload)
+#  - db/redis/minio/ollama are not published on the host's public interface
+#    (only reachable from other containers on the compose network)
+#  - Caddy terminates TLS (automatic Let's Encrypt cert) and proxies to the api
+#
+# Required on the server: an IMAGE_TAG env var (exported by the deploy step)
+# and a .env file with real production secrets (never committed to git).
+
+services:
+  api:
+    image: ghcr.io/krishnesh-kumar/luminalib:${IMAGE_TAG:-latest}
+    pull_policy: always
+    volumes: []
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports: []
+    restart: unless-stopped
+
+  worker:
+    image: ghcr.io/krishnesh-kumar/luminalib:${IMAGE_TAG:-latest}
+    pull_policy: always
+    volumes: []
+    restart: unless-stopped
+
+  beat:
+    image: ghcr.io/krishnesh-kumar/luminalib:${IMAGE_TAG:-latest}
+    pull_policy: always
+    volumes: []
+    restart: unless-stopped
+
+  db:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    ports: []
+    restart: unless-stopped
+
+  redis:
+    ports: []
+    restart: unless-stopped
+
+  minio:
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?set MINIO_ACCESS_KEY in .env}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY in .env}
+    ports: []
+    restart: unless-stopped
+
+  minio-mc:
+    restart: "no"
+
+  ollama:
+    ports: []
+    restart: unless-stopped
+
+  ollama-pull:
+    restart: "no"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: luminalib-caddy
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DEPLOY_DOMAIN: ${DEPLOY_DOMAIN:-:80}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
