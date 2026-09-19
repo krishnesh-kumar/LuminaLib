@@ -12,10 +12,9 @@ from app.providers.recs.ml_als import ALSRecommender
 from app.models import BookFile, BookAISummary, BookReviewConsensus, Review
 from app.repositories.tag_repo import TagRepository
 from app.repositories.recommendation_repo import RecommendationRepository
-from app.repositories.borrow_repo import BorrowRepository
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from scipy import sparse
 from pypdf import PdfReader
 
 logger = logging.getLogger(__name__)

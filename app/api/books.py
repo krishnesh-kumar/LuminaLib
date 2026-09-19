@@ -4,7 +4,7 @@ from typing import Optional, List
 
 from app.core.database import get_db
 from app.api import deps
-from app.schemas.books import BookCreate, BookUpdate, BookOut
+from app.schemas.books import BookOut
 from app.services.book_service import BookService
 
 router = APIRouter(prefix="/books", tags=["books"])

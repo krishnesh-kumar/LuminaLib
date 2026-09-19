@@ -1,7 +1,6 @@
 import os
 # Limit OpenBLAS threads to avoid noisy warnings and oversubscription in tests/CI
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-import numpy as np
 from typing import Sequence, Dict, List, Tuple, Set
 from scipy import sparse
 from implicit.als import AlternatingLeastSquares
