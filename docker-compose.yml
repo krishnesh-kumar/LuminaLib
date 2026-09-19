@@ -80,7 +80,7 @@ services:
       - minio-data:/data
 
   minio-mc:
-    image: minio/mc
+    image: quay.io/minio/mc
     container_name: luminalib-minio-mc
     depends_on:
       - minio
