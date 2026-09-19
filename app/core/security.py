@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 from typing import Any, Optional
 
-from jose import jwt, JWTError
+from jose import jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings

@@ -1,4 +1,3 @@
-from app.core.config import settings
 from .ollama import OllamaProvider
 from .base import LLMProvider
 
